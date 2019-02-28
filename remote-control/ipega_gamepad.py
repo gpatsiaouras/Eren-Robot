@@ -46,14 +46,24 @@ for event in gamepad.read_loop():
             right_trigger = absevent.event.value
 
     # Map controllers command to create linear and rotation velocitiesl
-    joy_power = remap(left_y_val, 255, 0, -400, 400)
-    joy_steering = remap(left_x_val, 0, 255, -400, 400)
+    joy_power = remap(left_y_val, 255, 0, -1000, 1000)
+    joy_steering = remap(left_x_val, 0, 255, -1000, 1000)
 
     camera_yaw = remap(right_x_val, 0, 255, 140, 0)
     camera_pitch = remap(right_y_val, 0, 255, 180, 0)
 
     left_motor = joy_power + (joy_steering * 2) / 2
     right_motor = joy_power + (-joy_steering * 2) / 2
+
+    if left_motor > 1023:
+        left_motor = 1023
+    if right_motor > 1023:
+        right_motor = 1023
+    if left_motor < -1023:
+        left_motor = -1023
+    if right_motor < -1023:
+        right_motor = -1023
+    
 
     # print("Left Motor: {0}, Right Motor: {1}, LeftX: {2}, LeftY: {3}".format(left_motor, right_motor, joy_steering, joy_power))
 
