@@ -1,12 +1,13 @@
+#include <Ethernet.h>
+#include <EthernetUdp.h>
+#include <EthernetClient.h>
+#include <Dns.h>
+#include <Dhcp.h>
+#include <EthernetServer.h>
+
 /*
- * rosserial Publisher Example
- * Prints "hello world!"
- * This intend to connect to a Wifi Access Point
- * and a rosserial socket server.
- * You can launch the rosserial socket server with
- * roslaunch rosserial_server socket.launch
- * The default port is 11411
- *
+ * To run the server initiate a ros core and then run
+ * rosrun rosserial_python serial_node.py tcp
  */
 #include <ESP8266WiFi.h>
 #include <Servo.h>
@@ -19,6 +20,10 @@
 
 const char* ssid     = "Ziggo9EE38EB";
 const char* password = "ujjx2atrendT";
+
+//Physical Properties
+const float WHEELBASE = 8;
+const float WHEELRADIUS = 2;
 
 // Servo
 Servo camera_pitch;
@@ -148,10 +153,21 @@ void drive_camera_yaw(const std_msgs::UInt16& cmd_msg){
 }
 
 void kinematics(const geometry_msgs::Twist& twist_msg) {
-  Serial.print("Linear: ");
-  Serial.println(twist_msg.linear.x);
-  Serial.print("Angular: ");
-  Serial.println(twist_msg.angular.z);
+  // Get individual velocity of each wheel
+  double velocity_diff = (WHEELBASE * twist_msg.angular.z) / 2.0;
+  double velocity_left = (twist_msg.linear.x - velocity_diff) / WHEELRADIUS;
+  double velocity_right = (twist_msg.linear.x + velocity_diff) / WHEELRADIUS;
+
+  int re_left_motor_dir = motor_left_reverse;
+  if (velocity_left >= 0) re_left_motor_dir = motor_left_forward;
+
+  int re_right_motor_dir = motor_right_reverse;
+  if (velocity_right >= 0) re_right_motor_dir = motor_right_forward;
+  
+  int re_left_motor_pwm = abs(velocity_left / 2.5 * 1023);
+  int re_right_motor_pwm = abs(velocity_right / 2.5 * 1023);
+
+  drive_motors(re_left_motor_pwm, re_right_motor_pwm, re_left_motor_dir, re_right_motor_dir);
 }
 
 void setup() {
@@ -171,6 +187,7 @@ void setup() {
 
   nh.subscribe(sub_yaw);
   nh.subscribe(sub_pitch);
+  nh.subscribe(sub_twist);
 }
 
 void loop() {
