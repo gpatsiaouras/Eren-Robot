@@ -1,1 +1,1 @@
-docker build . -t gpatsiaouras/ros-eren:latest
+docker build -t gpatsiaouras/ros-eren:latest .
