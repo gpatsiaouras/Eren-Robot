@@ -7,12 +7,13 @@
 #include <ros.h>
 #include <std_msgs/UInt16.h>
 #include <geometry_msgs/Twist.h>
+#include "config.h"
 
 // To use the TCP version of rosserial_arduino
 #define ROSSERIAL_ARDUINO_TCP
 
-const char* ssid     = "Ziggo9EE38EB";
-const char* password = "ujjx2atrendT";
+const char* ssid     = WIFI_SSID;
+const char* password = WIFI_PASSWORD;
 
 //Physical Properties
 const float WHEELBASE = 8;
@@ -26,7 +27,7 @@ const int camera_pitch_pin = D6;
 const int camera_yaw_pin = D7;
 
 // Set the rosserial socket server IP address
-IPAddress server(192,168,178,52);
+IPAddress server(ROS_MASTER_IP);
 // Set the rosserial socket server port
 const uint16_t serverPort = 11411;
 

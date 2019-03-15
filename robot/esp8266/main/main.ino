@@ -1,6 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 #include <Servo.h>
+#include "config.h"
 
 // Servo
 Servo camera_pitch;
@@ -10,8 +11,8 @@ const int camera_pitch_pin = D6;
 const int camera_yaw_pin = D7;
 
 // WIFI PARAMETERS
-const char* ssid     = "Ziggo9EE38EB";
-const char* password = "ujjx2atrendT";
+const char* ssid     = WIFI_SSID;
+const char* password = WIFI_PASSWORD;
 
 // UDP SERVER PARAMETERS
 WiFiUDP Udp;
@@ -159,7 +160,7 @@ void loop() {
       token = strtok(NULL, "-");
   
       drive_motors(re_left_motor_pwm, re_right_motor_pwm, re_left_motor_dir, re_right_motor_dir);
-      drive_servos(re_camera_yaw, re_camera_pitch)
+      drive_servos(re_camera_yaw, re_camera_pitch);
     } else {
       Udp.beginPacket(Udp.remoteIP(), localUdpPort);
       String str = String(analogRead(motor_left_pwm))+"-"+String(analogRead(motor_right_pwm));
