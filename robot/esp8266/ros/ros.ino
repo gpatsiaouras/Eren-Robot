@@ -1,10 +1,3 @@
-#include <Ethernet.h>
-#include <EthernetUdp.h>
-#include <EthernetClient.h>
-#include <Dns.h>
-#include <Dhcp.h>
-#include <EthernetServer.h>
-
 /*
  * To run the server initiate a ros core and then run
  * rosrun rosserial_python serial_node.py tcp
