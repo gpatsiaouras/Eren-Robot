@@ -7,6 +7,7 @@
 #include <ros.h>
 #include <std_msgs/UInt16.h>
 #include <geometry_msgs/Twist.h>
+#include <sensor_msgs/Joy.h>
 #include "config.h"
 
 // To use the TCP version of rosserial_arduino
@@ -59,6 +60,7 @@ void setup_servos() {
 ros::Subscriber<std_msgs::UInt16> sub_yaw("/eren/camera_yaw", drive_camera_yaw);
 ros::Subscriber<std_msgs::UInt16> sub_pitch("/eren/camera_pitch", drive_camera_pitch);
 ros::Subscriber<geometry_msgs::Twist> sub_twist("/eren/cmd_vel", kinematics);
+ros::Subscriber<sensor_msgs::Joy> sub_joy("/eren/joy_teleop", joy_listener);
 
 void setup_wifi() {
   Serial.println();
@@ -141,6 +143,10 @@ void drive_camera_yaw(const std_msgs::UInt16& cmd_msg){
   camera_yaw.write(cmd_msg.data);
 }
 
+void joy_listener(const sensor_msgs::Joy& joy_msg) {
+
+}
+
 void kinematics(const geometry_msgs::Twist& twist_msg) {
   float velocity_left = 0;
   float velocity_right = 0;
@@ -200,6 +206,7 @@ void setup() {
   nh.subscribe(sub_yaw);
   nh.subscribe(sub_pitch);
   nh.subscribe(sub_twist);
+  nh.subscribe(sub_joy);
 }
 
 void loop() {

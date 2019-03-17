@@ -43,7 +43,7 @@ def publisher():
 			buttons_values.insert(button, j.get_button(button))
 		
 		msg_twist.linear.x = axes_values[1]*(-1)
-		msg_twist.angular.z = axes_values[0]
+		msg_twist.angular.z = axes_values[0]*(-1)
 		msg_joy.axes = axes_values
 		msg_joy.buttons = buttons_values
 
