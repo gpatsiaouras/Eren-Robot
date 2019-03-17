@@ -39,8 +39,8 @@ const int motor_right_pwm = 4;
 const int motor_left_dir = 0;
 const int motor_right_dir = 2;
 const int motor_left_forward = LOW;
-const int motor_right_forward = HIGH;
 const int motor_left_reverse = HIGH;
+const int motor_right_forward = HIGH;
 const int motor_right_reverse = LOW;
 
 void setup_pins() {
@@ -49,6 +49,11 @@ void setup_pins() {
   pinMode(motor_left_dir, OUTPUT);
   pinMode(motor_right_pwm, OUTPUT);
   pinMode(motor_right_dir, OUTPUT);
+}
+
+void setup_servos() {
+  camera_pitch.attach(camera_pitch_pin);
+  camera_yaw.attach(camera_yaw_pin);
 }
 
 ros::Subscriber<std_msgs::UInt16> sub_yaw("/eren/camera_yaw", drive_camera_yaw);
@@ -73,19 +78,19 @@ void setup_wifi() {
 }
 
 void test_motors() {
-  // Set pwm in 1/4 of full power
-  analogWrite(motor_left_pwm, 256);
-  analogWrite(motor_right_pwm, 256);
+  // Start the motors
+  analogWrite(motor_left_pwm, 384);
+  analogWrite(motor_right_pwm, 384);
 
   // Go Forwards 
   digitalWrite(motor_left_dir, motor_left_forward);
   digitalWrite(motor_right_dir, motor_right_forward);
-  delay(2000);
+  delay(1000);
 
   // Go Reverse
   digitalWrite(motor_left_dir, motor_left_reverse);
   digitalWrite(motor_right_dir, motor_right_reverse);
-  delay(2000);
+  delay(1000);
 
   // Shutdown pwm
   analogWrite(motor_left_pwm, 0);
@@ -95,41 +100,31 @@ void test_motors() {
 void test_servos() {
   int pos;
 
-  for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    camera_pitch.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15ms for the servo to reach the position
+  for (pos = 0; pos <= 180; pos += 1) {
+    camera_pitch.write(pos);
+    delay(15);
   }
-  for (pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
-    camera_pitch.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15ms for the servo to reach the position
+  for (pos = 180; pos >= 0; pos -= 1) {
+    camera_pitch.write(pos);
+    delay(15);
   }
 
-  for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    camera_yaw.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15ms for the servo to reach the position
+  for (pos = 0; pos <= 180; pos += 1) {
+    camera_yaw.write(pos);
+    delay(15);
   }
-  for (pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
-    camera_yaw.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15ms for the servo to reach the position
+  for (pos = 180; pos >= 0; pos -= 1) {
+    camera_yaw.write(pos);
+    delay(15);
   }
 }
 
-void drive_motors(int re_left_motor_pwm, int re_right_motor_pwm, int re_left_motor_dir, int re_right_motor_dir) {
-  if (re_left_motor_dir == 1) {
-    digitalWrite(motor_left_dir, motor_left_forward);  
-  } else {
-    digitalWrite(motor_left_dir, motor_left_reverse);
-  }
-  if (re_right_motor_dir == 1) {
-    digitalWrite(motor_right_dir, motor_right_forward);   
-  } else {
-    digitalWrite(motor_right_dir, motor_right_reverse);   
-  }
+void drive_motors(int left_motor_pwm, int right_motor_pwm, int left_motor_direction, int right_motor_direction) {
+  digitalWrite(motor_left_dir, left_motor_direction);
+  digitalWrite(motor_right_dir, right_motor_direction);
   
-  analogWrite(motor_left_pwm, re_left_motor_pwm);
-  analogWrite(motor_right_pwm, re_right_motor_pwm);
+  analogWrite(motor_left_pwm, left_motor_pwm);
+  analogWrite(motor_right_pwm, right_motor_pwm);
 }
 
 void drive_camera_pitch(const std_msgs::UInt16& cmd_msg){
@@ -147,32 +142,55 @@ void drive_camera_yaw(const std_msgs::UInt16& cmd_msg){
 }
 
 void kinematics(const geometry_msgs::Twist& twist_msg) {
-  // Get individual velocity of each wheel
-  double velocity_diff = (WHEELBASE * twist_msg.angular.z) / 2.0;
-  double velocity_left = (twist_msg.linear.x - velocity_diff) / WHEELRADIUS;
-  double velocity_right = (twist_msg.linear.x + velocity_diff) / WHEELRADIUS;
-
-  int re_left_motor_dir = motor_left_reverse;
-  if (velocity_left >= 0) re_left_motor_dir = motor_left_forward;
-
-  int re_right_motor_dir = motor_right_reverse;
-  if (velocity_right >= 0) re_right_motor_dir = motor_right_forward;
+  float velocity_left = 0;
+  float velocity_right = 0;
+  float velocity_diff = 0;
+  float left_motor_pwm = 0;
+  float right_motor_pwm = 0;
   
-  int re_left_motor_pwm = abs(velocity_left / 2.5 * 1023);
-  int re_right_motor_pwm = abs(velocity_right / 2.5 * 1023);
+  if (twist_msg.angular.z > 0.1 || twist_msg.angular.z < -0.1) {
+    // Get individual velocity of each wheel
+    velocity_diff = (WHEELBASE * twist_msg.angular.z) / 2.0;
+    velocity_left = (twist_msg.linear.x - velocity_diff) / WHEELRADIUS;
+    velocity_right = (twist_msg.linear.x + velocity_diff) / WHEELRADIUS;
+  } else {
+    velocity_left = twist_msg.linear.x;
+    velocity_right = twist_msg.linear.x;
+  }
+  
+  int left_motor_direction = motor_left_reverse;
+  if (velocity_left >= 0) left_motor_direction = motor_left_forward;
 
-  drive_motors(re_left_motor_pwm, re_right_motor_pwm, re_left_motor_dir, re_right_motor_dir);
+  int right_motor_direction = motor_right_reverse;
+  if (velocity_right >= 0) right_motor_direction = motor_right_forward;
+
+  velocity_left = abs(velocity_left);
+  velocity_right = abs(velocity_right);
+  
+  if (twist_msg.angular.z > 0.1 || twist_msg.angular.z < -0.1) {
+    left_motor_pwm = velocity_left / 2.5;
+    right_motor_pwm = velocity_right / 2.5;
+    Serial.print("L: ");
+    Serial.print(left_motor_pwm);
+    Serial.print(" R: ");
+    Serial.println(right_motor_pwm);
+  } else {
+    left_motor_pwm = velocity_left;
+    right_motor_pwm = velocity_right;
+  }
+
+  left_motor_pwm = left_motor_pwm * 1023;
+  right_motor_pwm = right_motor_pwm * 1023;
+  
+  drive_motors((int) left_motor_pwm, (int) right_motor_pwm, left_motor_direction, right_motor_direction);
 }
 
 void setup() {
   // Use ESP8266 serial to monitor the process
   Serial.begin(115200);
+  
   setup_pins();
-  
-  // Servo
-  camera_pitch.attach(camera_pitch_pin);
-  camera_yaw.attach(camera_yaw_pin);
-  
+  setup_servos();
   setup_wifi();
   
   // Set the connection to rosserial socket server
@@ -186,6 +204,7 @@ void setup() {
 
 void loop() {
   nh.spinOnce();
+  
   // Loop exproximativly at 1Hz
   delay(10);
 }
