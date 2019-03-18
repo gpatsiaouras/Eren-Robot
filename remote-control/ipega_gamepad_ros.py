@@ -15,8 +15,6 @@ from geometry_msgs.msg import Twist
 
 MAX_VELOCITY = 23.1 * 0.0325
 MAX_ANGULAR_SPEED = MAX_VELOCITY / 0.075
-# Reduce max angular speed for better manual driving
-MAX_ANGULAR_SPEED = MAX_ANGULAR_SPEED * 0.75
 
 pygame.init()
 # Just the first joystick
