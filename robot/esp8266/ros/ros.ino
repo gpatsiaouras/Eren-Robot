@@ -17,8 +17,8 @@ const char* ssid     = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
 
 //Physical Properties
-const float WHEELBASE = 8;
-const float WHEELRADIUS = 2;
+const float WHEELBASE = 0.15;
+const float WHEELRADIUS = 0.0325;
 
 // Servo
 Servo camera_pitch;
@@ -147,22 +147,19 @@ void joy_listener(const sensor_msgs::Joy& joy_msg) {
 
 }
 
+float get_motor_pwm(float velocity) {
+  return 16.35 * pow(abs(velocity) / WHEELRADIUS, 1.31);
+}
+
 void kinematics(const geometry_msgs::Twist& twist_msg) {
   float velocity_left = 0;
   float velocity_right = 0;
   float velocity_diff = 0;
   float left_motor_pwm = 0;
   float right_motor_pwm = 0;
-  
-  if (twist_msg.angular.z > 0.1 || twist_msg.angular.z < -0.1) {
-    // Get individual velocity of each wheel
-    velocity_diff = (WHEELBASE * twist_msg.angular.z) / 2.0;
-    velocity_left = (twist_msg.linear.x - velocity_diff) / WHEELRADIUS;
-    velocity_right = (twist_msg.linear.x + velocity_diff) / WHEELRADIUS;
-  } else {
-    velocity_left = twist_msg.linear.x;
-    velocity_right = twist_msg.linear.x;
-  }
+
+  velocity_left = twist_msg.linear.x + twist_msg.angular.z * WHEELBASE / 2;
+  velocity_right = twist_msg.linear.x - twist_msg.angular.z * WHEELBASE / 2;
   
   int left_motor_direction = motor_left_reverse;
   if (velocity_left >= 0) left_motor_direction = motor_left_forward;
@@ -170,23 +167,15 @@ void kinematics(const geometry_msgs::Twist& twist_msg) {
   int right_motor_direction = motor_right_reverse;
   if (velocity_right >= 0) right_motor_direction = motor_right_forward;
 
-  velocity_left = abs(velocity_left);
-  velocity_right = abs(velocity_right);
-  
-  if (twist_msg.angular.z > 0.1 || twist_msg.angular.z < -0.1) {
-    left_motor_pwm = velocity_left / 2.5;
-    right_motor_pwm = velocity_right / 2.5;
-    Serial.print("L: ");
-    Serial.print(left_motor_pwm);
-    Serial.print(" R: ");
-    Serial.println(right_motor_pwm);
-  } else {
-    left_motor_pwm = velocity_left;
-    right_motor_pwm = velocity_right;
-  }
+//  velocity_left = abs(velocity_left);
+//  velocity_right = abs(velocity_right);
 
-  left_motor_pwm = left_motor_pwm * 1023;
-  right_motor_pwm = right_motor_pwm * 1023;
+  left_motor_pwm = get_motor_pwm(velocity_left);
+  right_motor_pwm = get_motor_pwm(velocity_right);
+  Serial.print("L: ");
+  Serial.print(left_motor_pwm);
+  Serial.print(" R: ");
+  Serial.println(right_motor_pwm);
   
   drive_motors((int) left_motor_pwm, (int) right_motor_pwm, left_motor_direction, right_motor_direction);
 }
