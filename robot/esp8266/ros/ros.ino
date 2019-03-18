@@ -148,18 +148,20 @@ void joy_listener(const sensor_msgs::Joy& joy_msg) {
 }
 
 float get_motor_pwm(float velocity) {
-  return 16.35 * pow(abs(velocity) / WHEELRADIUS, 1.31);
+  if (velocity < 0) {
+    velocity = -velocity;
+  }
+  return 16.35 * pow(velocity / WHEELRADIUS, 1.31);
 }
 
 void kinematics(const geometry_msgs::Twist& twist_msg) {
   float velocity_left = 0;
   float velocity_right = 0;
-  float velocity_diff = 0;
   float left_motor_pwm = 0;
   float right_motor_pwm = 0;
 
-  velocity_left = twist_msg.linear.x + twist_msg.angular.z * WHEELBASE / 2;
-  velocity_right = twist_msg.linear.x - twist_msg.angular.z * WHEELBASE / 2;
+  velocity_left = twist_msg.linear.x - twist_msg.angular.z * WHEELBASE / 2;
+  velocity_right = twist_msg.linear.x + twist_msg.angular.z * WHEELBASE / 2;
   
   int left_motor_direction = motor_left_reverse;
   if (velocity_left >= 0) left_motor_direction = motor_left_forward;
@@ -167,15 +169,11 @@ void kinematics(const geometry_msgs::Twist& twist_msg) {
   int right_motor_direction = motor_right_reverse;
   if (velocity_right >= 0) right_motor_direction = motor_right_forward;
 
-//  velocity_left = abs(velocity_left);
-//  velocity_right = abs(velocity_right);
-
   left_motor_pwm = get_motor_pwm(velocity_left);
   right_motor_pwm = get_motor_pwm(velocity_right);
-  Serial.print("L: ");
-  Serial.print(left_motor_pwm);
-  Serial.print(" R: ");
-  Serial.println(right_motor_pwm);
+
+  if (left_motor_pwm > 1023) left_motor_pwm = 1023;
+  if (right_motor_pwm > 1023) right_motor_pwm = 1023;
   
   drive_motors((int) left_motor_pwm, (int) right_motor_pwm, left_motor_direction, right_motor_direction);
 }
