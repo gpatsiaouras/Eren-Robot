@@ -13,8 +13,17 @@
 // To use the TCP version of rosserial_arduino
 #define ROSSERIAL_ARDUINO_TCP
 
-const char* ssid     = WIFI_SSID;
-const char* password = WIFI_PASSWORD;
+// Set true to start in Access Point mode
+// or false to connect to an existing wifi
+#define AP_MODE_ON true
+
+const char *ssid     = WIFI_SSID;
+const char *password = WIFI_PASSWORD;  
+
+// Set the rosserial socket server IP address
+IPAddress server(ROS_MASTER_IP);
+// Set the rosserial socket server port
+const uint16_t serverPort = 11411;
 
 //Physical Properties
 const float WHEELBASE = 0.15;
@@ -26,11 +35,6 @@ Servo camera_yaw;
 
 const int camera_pitch_pin = D6;
 const int camera_yaw_pin = D7;
-
-// Set the rosserial socket server IP address
-IPAddress server(ROS_MASTER_IP);
-// Set the rosserial socket server port
-const uint16_t serverPort = 11411;
 
 ros::NodeHandle nh;
 
@@ -63,20 +67,28 @@ ros::Subscriber<geometry_msgs::Twist> sub_twist("/eren/cmd_vel", kinematics);
 ros::Subscriber<sensor_msgs::Joy> sub_joy("/eren/joy_teleop", joy_listener);
 
 void setup_wifi() {
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
+  if (AP_MODE_ON) {
+    Serial.print("Configuring access point...");
+    WiFi.softAP(ssid, password);
+    IPAddress apIP = WiFi.softAPIP();
+    Serial.print("AP IP address: ");
+    Serial.println(apIP);
+  } else {
+    Serial.println();
+    Serial.print("Connecting to ");
+    Serial.println(ssid);
 
-  // Connect the ESP8266 the the wifi AP
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+    // Connect the ESP8266 the the wifi AP
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
+    }
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
   }
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
 }
 
 void test_motors() {
