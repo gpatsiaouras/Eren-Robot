@@ -61,7 +61,7 @@ def publisher():
 
 if __name__ == '__main__':
 	# Initiate Node
-	rospy.init_node('teleop_rojo_control', anonymous=True)
+	rospy.init_node('teleop_eren_control', anonymous=True)
 	# Publishers
 	cmd_vel_pub = rospy.Publisher('/eren/cmd_vel', Twist, queue_size=1)
 	joy_pub = rospy.Publisher('/eren/joy_teleop', Joy, queue_size=1)
