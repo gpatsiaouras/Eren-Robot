@@ -12,6 +12,11 @@ import pygame
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Twist
 
+
+MAX_VELOCITY = 23.1 * 0.0325
+MAX_ANGULAR_SPEED = MAX_VELOCITY / 0.075
+
+
 pygame.init()
 # Just the first joystick
 j = pygame.joystick.Joystick(0)
@@ -24,7 +29,7 @@ print 'Initialized Joystick : %s' % j.get_name()
 def publisher():
 	# Looping at
 	rate = rospy.Rate(10) # 10hz
-	
+
 	while not rospy.is_shutdown():
 		pygame.event.pump()
 
@@ -41,9 +46,10 @@ def publisher():
 			axes_values.insert(axis, j.get_axis(axis))
 		for button in range(j.get_numbuttons()):
 			buttons_values.insert(button, j.get_button(button))
-		
-		msg_twist.linear.x = axes_values[1]*(-1)
-		msg_twist.angular.z = axes_values[0]*(-1)
+
+		msg_twist.linear.x = axes_values[1]*(-1) * MAX_VELOCITY
+		msg_twist.angular.z = axes_values[0]*(-1) * MAX_ANGULAR_SPEED
+
 		msg_joy.axes = axes_values
 		msg_joy.buttons = buttons_values
 
